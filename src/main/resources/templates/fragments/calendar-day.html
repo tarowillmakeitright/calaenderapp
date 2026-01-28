@@ -1,32 +1,52 @@
-<div id="calendar-day">
-    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-        <button th:attr="hx-get=@{/calendar/day(date=${day.minusDays(1)})}"
-                hx-target="#calendar-day"
-                hx-swap="outerHTML">
-            ← 前日
-        </button>
+<div id="modal"
+     style="position:fixed; inset:0; background:rgba(0,0,0,0.4);
+            display:flex; justify-content:center; align-items:center; z-index:9999;">
+    <div style="background:white; padding:24px; width:520px; border-radius:12px;">
+        <button type="button"
+                onclick="document.getElementById('modals-here').innerHTML=''">✕</button>
 
-        <strong th:text="${day}"></strong>
+        <!-- ★ここを追加 -->
+        <div id="modal-body" th:fragment="modalBody">
 
-        <button th:attr="hx-get=@{/calendar/day(date=${day.plusDays(1)})}"
-                hx-target="#calendar-day"
-                hx-swap="outerHTML">
-            翌日 →
-        </button>
+            <h2 th:text="${day}">2026-01-02</h2>
+
+            <h3>予定</h3>
+            <div th:if="${#lists.isEmpty(events)}">なし</div>
+
+            <div th:each="e : ${events}"
+                 style="margin-bottom:8px; border-bottom:1px solid #eee; padding:6px 0;">
+                <div th:text="${#temporals.format(e.startTime(), 'HH:mm') + ' ' + e.title()}"></div>
+
+                <button type="button"
+                        th:if="${e.mine()}"
+                        th:attr="hx-delete=@{/events/{id}(id=${e.id()}, date=${day}, ym=${month})}"
+                        hx-target="#modal-body"
+                        hx-swap="innerHTML">
+                    削除
+                </button>
+            </div>
+
+            <hr>
+
+            <h3>新規追加</h3>
+            <form hx-post="/events/day"
+                  hx-target="#calendar-month"
+                  hx-swap="outerHTML"
+                  hx-on="htmx:afterRequest: document.getElementById('modals-here').innerHTML=''">
+                <input type="hidden" name="date" th:value="${day}">
+                <input type="hidden" name="ym" th:value="${month}">
+
+                <input type="text" name="title" placeholder="title" required>
+                開始: <input type="time" name="start" value="09:00" required>
+                終了: <input type="time" name="end" value="10:00" required>
+
+                <input type="text" name="location" placeholder="場所">
+                <input type="url"  name="url" placeholder="URL">
+                <textarea name="description" placeholder="詳細"></textarea>
+
+                <button type="submit">追加</button>
+            </form>
+
+        </div>
     </div>
-
-    <div th:if="${#lists.isEmpty(events)}">
-        予定なし
-    </div>
-
-    <ul th:if="${!#lists.isEmpty(events)}">
-        <li th:each="e : ${events}">
-            <span th:text="${#temporals.format(e.startTime, 'HH:mm')}"></span>
-            -
-            <span th:text="${#temporals.format(e.endTime, 'HH:mm')}"></span>
-            :
-            <span th:text="${e.title}"></span>
-            <small th:text="${e.ownerEmail}"></small>
-        </li>
-    </ul>
 </div>

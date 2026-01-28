@@ -45,34 +45,9 @@
             Loading...
         </div>
     </section>
-
-    <h2>予定</h2>
-
-    <!-- 予定追加フォーム -->
-    <form hx-post="/events"
-          hx-target="#calendar-month"
-          hx-swap="outerHTML"
-          hx-include="#ym-value">
-
-        <input type="text" name="title" placeholder="title" required>
-
-        <input type="datetime-local" name="start" required>
-        <input type="datetime-local" name="end" required>
-
-        <!-- 今見てる月(ym)を一緒に送る -->
-        <input type="hidden" name="ym" id="current-ym" value="2026-01">
-
-        <button type="submit">追加</button>
-    </form>
-
-    <!-- 予定一覧（部分） -->
-    <div id="events"
-         hx-get="/fragments/events"
-         hx-trigger="load">
-    </div>
-
-
 </section>
+
+<div id="modals-here"></div>
 
 </body>
 </html>

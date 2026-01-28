@@ -8,5 +8,6 @@ public record EventDTO(
         LocalDateTime startTime,
         LocalDateTime endTime,
         String ownerEmail,
-        boolean canDelete
+        boolean mine
+
 ) {}

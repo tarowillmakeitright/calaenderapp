@@ -1,6 +1,8 @@
 package com.ayataro.calendarshare;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,12 +20,23 @@ public class EventService {
         this.inviteService = inviteService;
     }
 
-    public void create(User owner, String title, LocalDateTime start, LocalDateTime end) {
+    public void create(User owner,
+                       String title,
+                       LocalDateTime start,
+                       LocalDateTime end,
+                       String location,
+                       String url,
+                       String description) {
+
         Event e = new Event();
         e.setTitle(title);
         e.setStartTime(start);
         e.setEndTime(end);
         e.setOwner(owner);
+        e.setLocation(location);
+        e.setUrl(url);
+        e.setDescription(description);
+
         repo.save(e);
     }
 
@@ -75,12 +88,14 @@ public class EventService {
         var events = repo.findByOwnerInAndStartTimeBetweenOrderByStartTimeAsc(owners, from, to)
                 .stream()
                 .map(e -> new EventDTO(
-                        e.getId(), e.getTitle(), e.getStartTime(), e.getEndTime(),
+                        e.getId(),
+                        e.getTitle(),
+                        e.getStartTime(),
+                        e.getEndTime(),
                         e.getOwner().getEmail(),
                         e.getOwner().getId().equals(me.getId())
                 ))
                 .toList();
-
         java.util.Map<java.time.LocalDate, java.util.List<EventDTO>> byDay = new java.util.HashMap<>();
         for (var e : events) {
             java.time.LocalDate d = e.startTime().toLocalDate();
@@ -100,4 +115,48 @@ public class EventService {
 
         return new MonthView(weeks, byDay);
     }
+    public EventDTO getVisibleEventDto(User me, Long id) {
+        var ev = repo.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        boolean visible = ev.getOwner().getId().equals(me.getId())
+                || inviteService.listAcceptedPartners(me).contains(ev.getOwner());
+
+        if (!visible) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+        return new EventDTO(
+                ev.getId(),
+                ev.getTitle(),
+                ev.getStartTime(),
+                ev.getEndTime(),
+                ev.getOwner().getEmail(),
+                ev.getOwner().getId().equals(me.getId())
+        );
+    }
+
+    public void updateIfOwner(User me,
+                              Long id,
+                              String title,
+                              LocalDateTime start,
+                              LocalDateTime end,
+                              String location,
+                              String url,
+                              String description) {
+
+        Event e = repo.findById(id).orElseThrow();
+
+        if (!e.getOwner().getId().equals(me.getId())) {
+            throw new IllegalArgumentException("not owner");
+        }
+
+        e.setTitle(title);
+        e.setStartTime(start);
+        e.setEndTime(end);
+        e.setLocation(location);
+        e.setUrl(url);
+        e.setDescription(description);
+
+        repo.save(e);
+    }
+
 }

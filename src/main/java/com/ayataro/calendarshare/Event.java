@@ -9,6 +9,9 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String url;
+    private String location;
+    private String description;
 
     public Long getId() {
         return id;
@@ -54,8 +57,36 @@ public class Event {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
+    public void setMine(boolean mine) {
+        isMine = mine;
+    }
+
+    private boolean isMine;
     @ManyToOne
     private User owner;
 
-    // getters/setters
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
 }

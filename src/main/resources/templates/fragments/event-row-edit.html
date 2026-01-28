@@ -1,0 +1,25 @@
+<div th:fragment="row">
+    <form hx-put="@{/events/{id}(id=${e.id})}"
+          hx-target="closest div"
+          hx-swap="outerHTML">
+
+        <input type="hidden" name="date" th:value="${day}">
+        <input type="hidden" name="ym" th:value="${month}">
+
+        <input type="text" name="title" th:value="${e.title}" required>
+        <input type="time" name="start" th:value="${#temporals.format(e.startTime,'HH:mm')}" required>
+        <input type="time" name="end" th:value="${#temporals.format(e.endTime,'HH:mm')}" required>
+
+        <button type="submit">保存</button>
+        <button type="button"
+                th:attr="hx-get=@{/events/{id}(id=${e.id})}"
+                hx-target="closest div"
+                hx-swap="outerHTML"
+                hx-include="closest div">
+            キャンセル
+        </button>
+
+        <input type="hidden" name="date" th:value="${day}">
+        <input type="hidden" name="ym" th:value="${month}">
+    </form>
+</div>

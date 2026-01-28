@@ -25,6 +25,7 @@
                 hx-target="#calendar-month" hx-swap="outerHTML">Today</button>
     </div>
 
+
     <div class="cal-grid">
         <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
         <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
@@ -32,7 +33,12 @@
         <div th:each="week : ${weeks}" th:remove="tag">
             <div th:each="c : ${week}"
                  th:with="isToday=${c.date.equals(T(java.time.LocalDate).now())}"
+                 th:attr="hx-get=@{/calendar/day(date=${c.date}, ym=${month})}"
+                 hx-target="#modals-here"
+                 hx-swap="innerHTML"
                  th:class="'cell ' + (${c.inMonth} ? '' : 'muted ') + (${isToday} ? 'today' : '')">
+
+
 
                 <div class="daynum" th:text="${c.date.dayOfMonth}"></div>
 
@@ -51,5 +57,4 @@
             </div>
         </div>
     </div>
-
 </div>

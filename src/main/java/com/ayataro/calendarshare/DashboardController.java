@@ -1,12 +1,16 @@
 package com.ayataro.calendarshare;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ui.Model;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 
 @Controller
 public class DashboardController {
@@ -20,25 +24,47 @@ public class DashboardController {
         this.inviteService = inviteService;
         this.eventService = eventService;
     }
+    @GetMapping("/events/{id}/edit")
+    public String editEventRow(@PathVariable Long id,
+                               @RequestParam String date,
+                               @RequestParam String ym,
+                               Principal principal,
+                               Model model) {
+
+        var me = userService.currentUser(principal);
+
+        var d = LocalDate.parse(date);
+        var month = YearMonth.parse(ym);
+
+        var dto = eventService.getVisibleEventDto(me, id); // 下で実装
+
+        model.addAttribute("day", d);
+        model.addAttribute("month", month);
+        model.addAttribute("e", dto);
+
+        return "fragments/event-row-edit";
+    }
 
     @GetMapping("/dashboard")
     public String dashboard() {
         return "dashboard";
     }
 
+
     @GetMapping("/calendar/day")
-    public String calendarDay(@RequestParam(required = false) String date,
+    public String calendarDay(@RequestParam String date,
+                              @RequestParam String ym,
                               Principal principal,
                               Model model) {
 
         var me = userService.currentUser(principal);
-
-        java.time.LocalDate d = (date == null || date.isBlank())
-                ? java.time.LocalDate.now()
-                : java.time.LocalDate.parse(date);
+        var d = java.time.LocalDate.parse(date);
+        var month = java.time.YearMonth.parse(ym);
 
         model.addAttribute("day", d);
+        model.addAttribute("month", month);
         model.addAttribute("events", eventService.listVisibleEventsForDate(me, d));
+
         return "fragments/calendar-day";
     }
     @GetMapping("/calendar/month")
@@ -73,14 +99,42 @@ public class DashboardController {
         return "fragments/partners";
     }
 
-    @GetMapping("/fragments/events")
-    public String events(Model model, Principal principal) {
-        var me = userService.currentUser(principal);
-        model.addAttribute("events", eventService.listVisibleEventsForDate(me, java.time.LocalDate.now()));
-        return "fragments/events";
-    }
-
     // --- actions ---
+    @PostMapping("/events/day")
+    public String createFromDay(@RequestParam String date,
+                                @RequestParam String start,
+                                @RequestParam String end,
+                                @RequestParam String title,
+                                @RequestParam(required=false) String location,
+                                @RequestParam(required=false) String url,
+                                @RequestParam(required=false) String description,
+                                @RequestParam String ym,
+                                Principal principal,
+                                Model model) {
+
+        var me = userService.currentUser(principal);
+
+        var d = LocalDate.parse(date);
+        var s = LocalTime.parse(start);
+        var e = LocalTime.parse(end);
+
+        eventService.create(me,
+                title,
+                LocalDateTime.of(d, s),
+                LocalDateTime.of(d, e),
+                location,
+                url,
+                description);
+
+        var month = YearMonth.parse(ym);
+        var vm = eventService.buildMonthView(me, month);
+
+        model.addAttribute("month", month);
+        model.addAttribute("weeks", vm.weeks());
+        model.addAttribute("eventsByDay", vm.eventsByDay());
+
+        return "fragments/calendar-month";
+    }
     @PostMapping("/invites")
     public String createInvite(@RequestParam String email, Principal principal, Model model) {
         var me = userService.currentUser(principal);
@@ -101,7 +155,6 @@ public class DashboardController {
         return "fragments/invites";
     }
 
-    // 拒否
     @PostMapping("/invites/{id}/reject")
     public String reject(@PathVariable Long id, Principal principal, Model model) {
         var me = userService.currentUser(principal);
@@ -111,41 +164,78 @@ public class DashboardController {
         return "fragments/invites";
     }
 
-    @PostMapping("/events")
-    public String createEvent(@RequestParam String title,
-                              @RequestParam String start,
-                              @RequestParam String end,
-                              @RequestParam(required = false) String ym,
-                              Principal principal,
-                              Model model) {
+    // 拒否
+    @DeleteMapping("/events/{id}/day")
+    public String deleteEventFromDay(@PathVariable Long id,
+                                     @RequestParam String ym,
+                                     Principal principal,
+                                     Model model,
+                                     HttpServletResponse response) {
 
-        var me = userService.currentUser(principal);
-
-        var st = java.time.LocalDateTime.parse(start);
-        var en = java.time.LocalDateTime.parse(end);
-
-        eventService.create(me, title, st, en);
-
-        // どの月を再描画するか：送られてきた ym、なければ start の月
-        java.time.YearMonth month = (ym != null && !ym.isBlank())
-                ? java.time.YearMonth.parse(ym)
-                : java.time.YearMonth.from(st);
-
-        var vm = eventService.buildMonthView(me, month);
-        model.addAttribute("month", month);
-        model.addAttribute("weeks", vm.weeks());
-        model.addAttribute("eventsByDay", vm.eventsByDay());
-
-        return "fragments/calendar-month";
-    }
-
-    @DeleteMapping("/events/{id}")
-    public String deleteEvent(@PathVariable Long id, Principal principal, Model model) {
         var me = userService.currentUser(principal);
         eventService.deleteIfOwner(me, id);
 
-        model.addAttribute("events", eventService.listVisibleEventsForDate(me, java.time.LocalDate.now()));
-        return "fragments/events";
+        response.addHeader("HX-Trigger", "refresh-month");
+
+        var d = LocalDate.now(); // モーダル再描画用（同じ日でもOK）
+        model.addAttribute("day", d);
+        model.addAttribute("month", YearMonth.parse(ym));
+        model.addAttribute("events", eventService.listVisibleEventsForDate(me, d));
+
+        return "fragments/calendar-day";
+    }
+
+    @DeleteMapping("/events/{id}")
+    public String deleteFromModal(@PathVariable Long id,
+                                  @RequestParam String date,
+                                  @RequestParam String ym,
+                                  Principal principal,
+                                  Model model) {
+        var me = userService.currentUser(principal);
+
+        eventService.deleteIfOwner(me, id);
+
+        var d = LocalDate.parse(date);
+        var month = YearMonth.parse(ym);
+
+        model.addAttribute("day", d);
+        model.addAttribute("month", month);
+        model.addAttribute("events", eventService.listVisibleEventsForDate(me, d));
+
+        return "fragments/calendar-day :: modalBody";
+    }
+
+
+    // 更新
+    @PutMapping("/events/{id}")
+    public String updateEventRow(@PathVariable Long id,
+                                 @RequestParam String date,
+                                 @RequestParam String ym,
+                                 @RequestParam String title,
+                                 @RequestParam String start,
+                                 @RequestParam String end,
+                                 @RequestParam(required=false) String location,
+                                 @RequestParam(required=false) String url,
+                                 @RequestParam(required=false) String description,
+                                 Principal principal,
+                                 Model model) {
+
+        var me = userService.currentUser(principal);
+
+        var d = LocalDate.parse(date);
+        var s = LocalTime.parse(start);
+        var e = LocalTime.parse(end);
+
+        eventService.updateIfOwner(me, id,
+                title, LocalDateTime.of(d, s), LocalDateTime.of(d, e),
+                location, url, description);
+
+        // 更新後：その1行だけ表示に戻す
+        var dto = eventService.getVisibleEventDto(me, id);
+        model.addAttribute("day", d);
+        model.addAttribute("month", YearMonth.parse(ym));
+        model.addAttribute("e", dto);
+        return "fragments/event-row-view";
     }
 
 }

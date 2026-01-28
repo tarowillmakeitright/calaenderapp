@@ -1,0 +1,21 @@
+<div class="event-row"
+     th:fragment="eventRow(e, day, month)"
+     style="display:flex; gap:8px; align-items:center; justify-content:space-between;
+            padding:6px 0; border-bottom:1px solid #eee;">
+
+    <div th:fragment="eventRow(e, day, month)">
+        <div th:text="${#temporals.format(e.startTime(), 'HH:mm') + ' ' + e.title()}"></div>
+
+    <button type="button"
+            th:if="${e.mine}"
+            th:attr="hx-get=@{/events/{id}/edit(id=${e.id}, date=${day}, ym=${month})}">
+        編集
+    </button>
+
+        <button th:if="${e.mine()}"
+                th:attr="hx-delete=@{/events/{id}(id=${e.id()}, date=${day}, ym=${month})}">
+            削除
+        </button>
+    </div>
+
+</div>
