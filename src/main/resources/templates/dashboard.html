@@ -1,0 +1,78 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+<h1>Calendar Share</h1>
+
+<section>
+    <h2>招待</h2>
+
+    <!-- 招待フォーム -->
+    <form hx-post="/invites"
+          hx-target="#invites"
+          hx-swap="outerHTML">
+        <input type="email" name="email" placeholder="partner@example.com" required>
+        <button type="submit">共有リクエスト送信</button>
+    </form>
+
+    <!-- 招待一覧（部分） -->
+    <div id="invites"
+         hx-get="/fragments/invites"
+         hx-trigger="load">
+    </div>
+</section>
+
+<section>
+    <h2>共有相手</h2>
+    <div id="partners"
+         hx-get="/fragments/partners"
+         hx-trigger="load">
+    </div>
+</section>
+
+<section>
+    <section>
+        <h2>Calendar</h2>
+
+        <div id="calendar-month"
+             hx-get="/calendar/month"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+            Loading...
+        </div>
+    </section>
+
+    <h2>予定</h2>
+
+    <!-- 予定追加フォーム -->
+    <form hx-post="/events"
+          hx-target="#calendar-month"
+          hx-swap="outerHTML"
+          hx-include="#ym-value">
+
+        <input type="text" name="title" placeholder="title" required>
+
+        <input type="datetime-local" name="start" required>
+        <input type="datetime-local" name="end" required>
+
+        <!-- 今見てる月(ym)を一緒に送る -->
+        <input type="hidden" name="ym" id="current-ym" value="2026-01">
+
+        <button type="submit">追加</button>
+    </form>
+
+    <!-- 予定一覧（部分） -->
+    <div id="events"
+         hx-get="/fragments/events"
+         hx-trigger="load">
+    </div>
+
+
+</section>
+
+</body>
+</html>

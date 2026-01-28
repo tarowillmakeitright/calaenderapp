@@ -1,0 +1,19 @@
+<div id="events" xmlns:th="http://www.thymeleaf.org">
+    <ul>
+        <li th:each="e : ${events}">
+            <b th:text="${e.title}">title</b>
+            <span> </span>
+            <span th:text="${e.startTime}">start</span>
+            <span> - </span>
+            <span th:text="${e.endTime}">end</span>
+            <span> (</span><span th:text="${e.ownerEmail}">owner</span><span>)</span>
+
+            <!-- 削除（ownerだけ表示する想定） -->
+            <button th:attr="hx-delete=@{/events/{id}(id=${e.id})}"
+                    hx-target="#events"
+                    hx-swap="outerHTML">
+                Delete
+            </button>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,32 @@
+<div id="calendar-day">
+    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+        <button th:attr="hx-get=@{/calendar/day(date=${day.minusDays(1)})}"
+                hx-target="#calendar-day"
+                hx-swap="outerHTML">
+            ← 前日
+        </button>
+
+        <strong th:text="${day}"></strong>
+
+        <button th:attr="hx-get=@{/calendar/day(date=${day.plusDays(1)})}"
+                hx-target="#calendar-day"
+                hx-swap="outerHTML">
+            翌日 →
+        </button>
+    </div>
+
+    <div th:if="${#lists.isEmpty(events)}">
+        予定なし
+    </div>
+
+    <ul th:if="${!#lists.isEmpty(events)}">
+        <li th:each="e : ${events}">
+            <span th:text="${#temporals.format(e.startTime, 'HH:mm')}"></span>
+            -
+            <span th:text="${#temporals.format(e.endTime, 'HH:mm')}"></span>
+            :
+            <span th:text="${e.title}"></span>
+            <small th:text="${e.ownerEmail}"></small>
+        </li>
+    </ul>
+</div>

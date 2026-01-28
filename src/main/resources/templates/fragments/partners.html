@@ -1,0 +1,7 @@
+<div id="partners" xmlns:th="http://www.thymeleaf.org">
+    <ul>
+        <li th:each="p : ${partners}">
+            <span th:text="${p.email}">partner@example.com</span>
+        </li>
+    </ul>
+</div>

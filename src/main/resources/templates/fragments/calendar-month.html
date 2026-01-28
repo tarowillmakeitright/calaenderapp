@@ -1,0 +1,55 @@
+<div id="calendar-month" xmlns:th="http://www.thymeleaf.org">
+    <input type="hidden" id="ym-value" th:value="${month}" />
+
+    <style>
+        .cal-header { display:flex; gap:12px; align-items:center; margin: 12px 0; }
+        .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; max-width: 980px; }
+        .dow { font-weight:bold; opacity:0.75; padding:4px; }
+        .cell { border:1px solid #ddd; border-radius:10px; padding:8px; min-height:90px; cursor:pointer; }
+        .muted { opacity:0.35; }
+        .today { outline: 3px solid #00000020; }
+        .daynum { font-weight:bold; margin-bottom:6px; }
+        .evt { font-size: 12px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+    </style>
+
+    <div class="cal-header">
+        <button th:attr="hx-get=@{/calendar/month(ym=${month.minusMonths(1)})}"
+                hx-target="#calendar-month" hx-swap="outerHTML">←</button>
+
+        <h2 th:text="${month}"></h2>
+
+        <button th:attr="hx-get=@{/calendar/month(ym=${month.plusMonths(1)})}"
+                hx-target="#calendar-month" hx-swap="outerHTML">→</button>
+
+        <button th:attr="hx-get=@{/calendar/month(ym=${T(java.time.YearMonth).now()})}"
+                hx-target="#calendar-month" hx-swap="outerHTML">Today</button>
+    </div>
+
+    <div class="cal-grid">
+        <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
+        <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+
+        <div th:each="week : ${weeks}" th:remove="tag">
+            <div th:each="c : ${week}"
+                 th:with="isToday=${c.date.equals(T(java.time.LocalDate).now())}"
+                 th:class="'cell ' + (${c.inMonth} ? '' : 'muted ') + (${isToday} ? 'today' : '')">
+
+                <div class="daynum" th:text="${c.date.dayOfMonth}"></div>
+
+                <div th:if="${eventsByDay.containsKey(c.date)}">
+                    <div class="evt"
+                         th:each="e,iter : ${eventsByDay.get(c.date)}"
+                         th:if="${iter.index < 3}"
+                         th:text="${#temporals.format(e.startTime, 'HH:mm') + ' ' + e.title}">
+                    </div>
+
+                    <div class="evt"
+                         th:if="${eventsByDay.get(c.date).size() > 3}"
+                         th:text="'+' + (eventsByDay.get(c.date).size() - 3) + ' more'"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>

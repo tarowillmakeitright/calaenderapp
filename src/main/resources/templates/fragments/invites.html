@@ -1,0 +1,22 @@
+<div id="invites" xmlns:th="http://www.thymeleaf.org">
+    <ul>
+        <li th:each="inv : ${invites}">
+            <span th:text="${inv.partnerEmail}">email</span>
+            <span> - </span>
+            <span th:text="${inv.status}">PENDING</span>
+
+            <button th:if="${inv.canAccept}"
+                    th:attr="hx-post=@{/invites/{id}/accept(id=${inv.id})}"
+                    hx-target="#invites"
+                    hx-swap="outerHTML">
+                承認
+            </button>
+            <button th:if="${inv.canAccept}"
+                    th:attr="hx-post=@{/invites/{id}/reject(id=${inv.id})}"
+                    hx-target="#invites"
+                    hx-swap="outerHTML">
+                拒否
+            </button>
+        </li>
+    </ul>
+</div>
